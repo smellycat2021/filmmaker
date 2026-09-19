@@ -86,7 +86,7 @@ The initial version will not attempt:
 
 * Arbitrary-length films or unrestricted environments.
 * Arbitrary object interactions or generalized grasp synthesis.
-* Automatic character or environment generation, arbitrary imported assets, or motion retargeting across rigs. **The MVP asset set and rig versions are frozen** (§5.4).
+* Automatic character or environment generation, arbitrary imported assets, or cross-topology motion retargeting (between different rig families). Same-topology proportion adaptation within the canonical rig (§6.2) is in scope and engine-native. **The MVP asset set and rig versions are frozen** (§5.4).
 * Fully automatic expressive acting.
 * Dialogue, audio, lip-sync, or voice. The screenplay format may contain dialogue; the MVP ignores it.
 * Guaranteed photorealism.
@@ -182,7 +182,8 @@ The IR is a typed, versioned, schema-validated representation of a production. I
 
 It contains:
 
-* Asset references (characters, locations, props) by stable ID and version.
+* Asset references (characters, locations, props) by stable ID and version. A character reference names its `skeleton_id` (canonical rig, §6.2), its `rig_instance_id` (that character's proportion parameters), and its face rig separately from its body mesh.
+* Action clip references tagged with the `skeleton_id` they were authored against.
 * Scene definitions: location, cast, initial world state.
 * An action timeline: ordered semantic actions with dependencies and event markers.
 * Shot definitions: camera, lens, movement, and event-synchronized instructions.
@@ -199,7 +200,7 @@ The asset registry stores persistent character identities, body rigs, facial con
 
 For the MVP the asset set is **frozen**:
 
-* One character rig (Alice) with fixed proportions and one wardrobe.
+* One canonical adult-human rig (§6.2) and one rig instance (Alice) with fixed proportions, one face rig, and one wardrobe.
 * One house environment with connected entry and kitchen.
 * One refrigerator with a hinged door and known handle and interior grasp points.
 * One soda can.
@@ -247,9 +248,30 @@ Every interactive object requires a stable identity and sufficient geometry to s
 
 ### 6.2 Character representation
 
-A character asset includes a persistent identity, skeletal rig, surface geometry, facial controls, clothing, and appearance references.
+A character asset includes a persistent identity, a body rig instance, surface geometry, a face rig, clothing, and appearance references.
 
 The rig should represent the degrees of freedom needed for supported actions rather than attempting to animate every anatomical bone independently. Hands, wrists, shoulders, spine, neck, and facial controls deserve particular attention because they strongly affect close-up interactions and acting.
+
+#### Rig contract
+
+Characters do not each get their own skeleton, and they do not all share one identically-proportioned skeleton. The design is a **shared canonical rig definition, instantiated and parameterized per character**:
+
+```
+Character body rig = Canonical Rig + Character Proportions + Character-Specific Constraints
+```
+
+* **Canonical rig** (`skeleton_id`): one shared joint hierarchy, bone naming, joint orientations, joint limits, and a fixed bind pose (A-pose). For the MVP this is the engine's standard adult-human skeleton (on Unreal, the MetaHuman/Mannequin skeleton).
+* **Rig instance** (`rig_instance_id`): per-character bone lengths, shoulder and hip width, hand size, neck length, and similar anatomical parameters within plausible ranges. These are set independently, not by uniform scale — a skeleton multiplied by 0.9 still looks like the same person shrunk. The bind pose is **not** per-character; keeping it canonical is what makes proportion adaptation trivial.
+* **Face rig**: per-character (blendshapes or a face control rig), stored as a separate asset from the body rig instance so the body contract stays clean.
+
+All motion clips (§7.2) are authored against the canonical rig. Playing a clip on a character means two things:
+
+1. **Same-topology adaptation** for locomotion and gesture: the clip's joint angles are applied to the character's instance; the engine handles differing bone lengths natively. This is not the cross-topology retargeting excluded in §2.2.
+2. **IK pinning at contact events** for anything that touches an object: proportion adaptation preserves *pose*, not *end-effector position*. A character with 8% longer arms plays `reach` with the hand 8% past the fridge handle. The limited IK in §7.2 closes that gap at `reach_target`, `grip_established`, and `release` events. This IK is the mechanism that makes per-character proportions work at all; it is not optional.
+
+Non-human or non-adult characters (child, infant, quadruped) need separate canonical rig families with their own clips, because an adult rig shrunk to toddler size has the wrong balance, joint ranges, and stride mechanics. Rig families are post-MVP.
+
+**MVP:** one canonical adult-human rig, one instance (Alice). Adding a second instance with different proportions (Bob) is the first post-Gate-A extension and a direct test of this contract: if Alice's clips plus IK pinning still land Bob's hand on the handle and the can, the rig contract holds.
 
 ### 6.3 World-state transitions
 
@@ -303,7 +325,7 @@ walk, turn, reach, grasp, carry, open, close, release
 
 Each clip is authored against the known character proportions, the fixed refrigerator, and the known handle and can positions. The planner sequences and blends clips; it does not synthesize them.
 
-The runtime still needs a small amount of correction machinery: limited IK to close small alignment errors at contact, and attachment handling at `grip_established` / `release` events. Generalized grasp synthesis, arbitrary object geometry, and physically robust manipulation are post-MVP.
+The runtime still needs a small amount of correction machinery: limited IK to close alignment errors at contact events (the IK pinning described in the rig contract, §6.2), and attachment handling at `grip_established` / `release` events. Generalized grasp synthesis, arbitrary object geometry, and physically robust manipulation are post-MVP.
 
 ### 7.3 Interaction contracts
 
