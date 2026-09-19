@@ -1,0 +1,10 @@
+gate0/renders/
+gate0/results/**/*.exr
+gate0/results/**/*.mp4
+gate0/results/**/*.mov
+*.uasset
+*.umap
+Saved/
+Intermediate/
+DerivedDataCache/
+.DS_Store

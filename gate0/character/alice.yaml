@@ -1,0 +1,98 @@
+# Gate 0 character definition — the authoritative input.
+# MetaHuman Creator settings are DERIVED from this file, not the other way round.
+# This file is the seed of the production IR's character schema (design doc §5.3, §6.2).
+#
+# Conventions: engine-native (Unreal). Z-up, left-handed, centimeters.
+# Scale factors are relative to the canonical rig's default proportions (1.00 = default).
+
+character: alice
+canonical_rig: metahuman_adult_v1          # shared skeleton; hierarchy + bind pose fixed
+version: 1
+
+# What makes it the same person. Fixed across all stages.
+# These are written as MetaHuman Creator terms so they can be set once and locked.
+shared:
+  sex: female
+  ethnicity_blend: "TODO — pick 2 MetaHuman presets and blend weights; record them here"
+  bone_structure:
+    face_width: 1.00
+    jaw: narrow
+    cheekbones: high
+    brow_ridge: 0.95
+  eye_spacing: 1.03                        # slightly wide-set — deliberate, non-generic
+  nose_shape: "slight dorsal hump, narrow bridge"
+  mouth_width: 0.97
+  distinguishing_features:
+    - "left eyebrow sits ~2 mm higher than right (asymmetry)"
+    - "small mole below right eye, ~1 cm lateral of the outer canthus"
+  eye_color: "grey-green"
+  # Non-generic on purpose. If a stock preset looks like this without edits, change it.
+
+stages:
+  young:
+    age: 22
+    height_cm: 168
+    proportions:
+      shoulder_width: 0.98
+      hip_width: 1.00
+      arm_length: 1.00
+      hand_size: 1.00
+      neck_length: 1.02
+    face:
+      skin_age: 0.10                       # MetaHuman "Age"/wrinkle intensity, 0–1
+      skin_detail: light
+      hairline: full
+      hair: "dark brown, shoulder length"
+    constraints: {}
+
+  middle:
+    age: 45
+    height_cm: 168
+    proportions:
+      shoulder_width: 1.00
+      hip_width: 1.04
+      arm_length: 1.00
+      hand_size: 1.00
+      neck_length: 1.02
+    face:
+      skin_age: 0.50
+      skin_detail: medium                  # nasolabial folds, crow's feet
+      hairline: slightly_receding
+      hair: "dark brown with grey at temples, shoulder length"
+    constraints: {}
+
+  old:
+    age: 72
+    height_cm: 163                         # height loss with age
+    proportions:
+      shoulder_width: 0.95
+      hip_width: 1.04
+      arm_length: 1.00                     # arms don't shorten; reach geometry changes via stoop
+      hand_size: 0.97
+      neck_length: 1.00
+    face:
+      skin_age: 0.90
+      skin_detail: heavy                   # jowls, deep folds, thinning lips
+      hairline: thin
+      hair: "grey-white, short"
+    constraints:
+      spine_stoop_deg: 8                   # forward flexion applied on top of every clip
+      # This is the only "character-specific constraint" in Gate 0.
+      # It must NOT break contact at the fridge handle or the can — that's a scored check.
+
+# Every stage plays the SAME clips. Motion is deliberately not aged (design doc §13.1).
+motion:
+  clips: [walk, turn, open_fridge, reach_grasp, retract, close_fridge]
+  source: "TODO — library name + clip IDs once chosen (Fab / Mixamo / other)"
+  retarget: once, onto canonical_rig
+  contact_ik:
+    events: [reach_target, grip_established, release]
+    targets: [fridge_01.handle, soda_can_01.grasp_point]
+  face:
+    source: "live_link_face | hand_keyed"
+    minimum: [blink_x3, eye_dart_x2, small_expression_at_grasp]
+
+# Identity conditioning input for the generative step — taken FROM the conventional render.
+identity_refs:
+  per_stage: 8
+  frames: "3 face-closest during orbit, 2 profile, 3 full-body"
