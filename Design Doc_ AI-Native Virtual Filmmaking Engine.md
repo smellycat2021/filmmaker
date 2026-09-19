@@ -1,8 +1,10 @@
 # Design Doc: AI-Native Virtual Filmmaking Engine
 
-**Status:** Draft v0.2
+**Status:** Draft v0.3
 **Target:** Small-team prototype
 **Initial scope:** A 15–30-second cinematic sequence with persistent characters, environments, objects, and controllable cameras.
+
+**Changes from v0.2:** Added Gate 0, a human fidelity spike that runs before any world-engine work: one MetaHuman, one object interaction, one moving camera, 20 seconds, judged on whether the rendered human is acceptable — conventionally and with generative refinement. Re-sequenced the roadmap around it. Rationale: if the rendered human does not pass, the rest of the system has no product to serve.
 
 **Changes from v0.1:** Split the project into two independently testable hypotheses (Gate A: virtual production, Gate B: generative fidelity). Defined the production IR as the first deliverable. Replaced generalized motion synthesis with authored action clips against a frozen asset set. Replaced the custom camera optimizer and dependency graph with engine-native camera rigs and a versioned manifest. Rewrote the feasibility experiment with a two-camera fixture, an evaluation matrix, and pre-committed outcomes. Fixed the coordinate convention, added audio to non-goals, and cleaned up formatting.
 
@@ -48,16 +50,17 @@ A screenplay is compiled into a structured production plan. The system generates
 
 Conventional 3D rendering is a supported output mode with its own quality bar. Generative video is an optional refinement layer on top of it, never the authority for scene geometry or continuity.
 
-### 1.3 Two hypotheses, tested independently
+### 1.3 Three hypotheses, tested in order
 
-v0.1 bundled two claims into one plan. v0.2 separates them:
+v0.1 bundled everything into one plan. v0.2 separated the world engine from generative fidelity. v0.3 puts the human first:
 
 | Hypothesis | Gate | Question |
 | --- | --- | --- |
+| **H-0: Human fidelity** | Gate 0 | Can the pipeline render one human, doing a few actions, from one moving camera, for 20 seconds, at a quality the product needs — with or without generative refinement? |
 | **H-A: Virtual production** | Gate A | Can we compile structured filmmaking instructions into a coherent, editable, multi-shot 3D production? |
-| **H-B: Generative fidelity** | Gate B | Can a generative video model convert that production into photorealistic footage without losing identity, geometry, actions, or camera movement — across shots? |
+| **H-B: Generative fidelity** | Gate B | Does the generative layer preserve identity, geometry, actions, and camera movement *across shots*? |
 
-Gate A is the core product and must pass on its own. Gate B is an independent risk: it can fail without invalidating the project, and it runs as soon as Gate A produces structural renders — not after the script compiler.
+**Gate 0 runs first and alone.** It needs no world engine, no IR, no planner — just a hand-built scene and the renderers. If the human does not pass, nothing downstream has a product to serve, so nothing downstream is built until it does. Gate A is the core product and must pass on its own. Gate B is the cross-shot extension of Gate 0 and runs as soon as Gate A produces two-camera renders.
 
 ### 1.4 Intended users
 
@@ -441,7 +444,7 @@ Inputs may include RGB and structural passes, persistent appearance references, 
 
 The renderer is responsible for visual synthesis, not deciding what happened in the scene. It should preserve object identity, spatial relationships, camera movement, and action timing.
 
-This cannot be guaranteed by defining an interface. It must be demonstrated experimentally with the actual model and conditioning mechanism — that is Gate B (§13.3).
+This cannot be guaranteed by defining an interface. It must be demonstrated experimentally with the actual model and conditioning mechanism — that is Gate 0 for a single shot (§13.1) and Gate B across shots (§13.4).
 
 ### 10.3 Conventional rendering is the baseline, not a fallback
 
@@ -469,7 +472,7 @@ Each output records a manifest: screenplay version, asset versions, IR version, 
 
 **MVP regeneration policy: full re-render.** v0.1 proposed a dependency graph with selective invalidation. That is deferred. The manifest makes it possible to tell what changed; it does not yet drive partial regeneration.
 
-Re-render cost is not assumed to be small. It depends on resolution, renderer, hardware, and whether generative inference is included — and generative inference is where cost will bite first. The MVP **measures** per-shot cost for both paths (see Gate B, §13.3). Selective invalidation is built when measured cost justifies it, and the manifest's hashes are what will drive it when that happens.
+Re-render cost is not assumed to be small. It depends on resolution, renderer, hardware, and whether generative inference is included — and generative inference is where cost will bite first. The MVP **measures** per-shot cost for both paths (see Gate 0, §13.1, and Gate B, §13.4). Selective invalidation is built when measured cost justifies it, and the manifest's hashes are what will drive it when that happens.
 
 ## 12. Verification and quality control
 
@@ -492,7 +495,46 @@ The MVP exposes side-by-side conventional and generative playback so reviewers c
 
 ## 13. MVP definition and gates
 
-### 13.1 Demonstration sequence
+### 13.1 Gate 0: Human fidelity spike
+
+Audiences forgive a wrong refrigerator; they do not forgive an uncanny human. Before any world-engine work, the project establishes whether the rendered human meets the product's bar.
+
+**Deliverable.** A 20-second rendered scene: one human, a few actions including one object interaction, one moving camera. Judged on the human.
+
+**Fixture — hand-built, nothing from the pipeline.**
+
+* One MetaHuman. Nothing custom.
+* One kitchen environment from the marketplace. It is a backdrop, not a semantic world.
+* Actions: walk → turn → open refrigerator → grasp can → retract → close. **The object interaction stays in.** Hands touching things is where both conventional and generative renders fail most, and a human who cannot pick something up cannot act. Without it this is a portrait test that does not predict the real failure modes.
+* One camera: follow-from-behind, orbiting to three-quarter during the grasp. A *moving* camera stresses identity under viewpoint change; a static shot hides it.
+* Clips from a mocap library, retargeted once onto the MetaHuman, hand-fixed at contact. No authored clips, no IK system.
+* Built in Sequencer by hand. No IR, no planner, no compiler, no second camera, no verification framework.
+
+**Two renders, judged separately.**
+
+1. **Conventional:** MetaHuman + Lumen + Movie Render Queue, RGB plus depth/normal/segmentation passes. This is the human with no generative layer.
+2. **Generative:** the conventional render and its passes through 2–3 candidate video-to-video models with structural conditioning. Selecting the candidates is week-1 work.
+
+If (1) passes, Gate B stops mattering and the risk profile of the whole project changes. If only (2) passes, the dependency on generative refinement is confirmed and the model is selected. If neither passes, the project stops here.
+
+**Acceptance bar.** The overall row is the test; the others explain a failure.
+
+| Property | Bar |
+| --- | --- |
+| Face | Same person for 20 s; no morphing under the orbit; skin and eyes do not read as CG at 1080p |
+| Hands and contact | Fingers close on the handle and the can; no melting, extra fingers, or pass-through at contact frames |
+| Body motion | Weight and balance read as human; no foot sliding; the reach looks intentional |
+| Hair and clothing | No flicker, no boiling texture, no popping |
+| Temporal | No warping or jitter across the 20 s, including at any clip-stitch boundary |
+| **Overall** | **A non-expert viewer, told nothing, does not say "that's CG" or "that's AI" within the 20 s** |
+
+**On the 20 seconds.** Most video models generate 5–10 s natively, so 20 s forces the long-sequence problem (§10.4) immediately. Evaluate a single native-window clip of the grasp *first*, then the full stitched 20 s, and report both — otherwise a stitching failure masks a per-clip success or vice versa.
+
+**Cost.** 3–5 weeks with two people (one on Unreal, one on the model pipeline and eval; the halves are independent until the render exists). 6–8 weeks with one person doing both in sequence. No animator required; library mocap is sufficient for a fidelity test. The only outside input is the non-expert viewer judgment at the end.
+
+**What transfers.** Everything. The renderer does not care whether a planner or a person placed the keyframes, so a human that passes here passes in the full pipeline. What this does *not* test — persistence, multi-camera, editability — is exactly what Gate A tests, and Gate A is only worth running if Gate 0 passes.
+
+### 13.2 Demonstration sequence
 
 > Alice approaches a house, opens the front door, enters, walks to the kitchen, opens the refrigerator, retrieves a soda can, and closes the refrigerator.
 
@@ -506,7 +548,7 @@ The sequence must support both a continuous tracking-camera plan and an edited m
 | Actions | walk, turn, reach, grasp, carry, open, close, release — authored clips |
 | Camera modes | static, follow, dolly, orbit |
 
-### 13.2 Gate A: Virtual production (core product)
+### 13.3 Gate A: Virtual production (core product)
 
 Gate A passes if the system, from a hand-authored IR, can:
 
@@ -519,9 +561,9 @@ Gate A passes if the system, from a hand-authored IR, can:
 
 Gate A must pass regardless of Gate B's outcome. Passing Gate A is a meaningful product result on its own.
 
-### 13.3 Gate B: Generative fidelity (independent risk)
+### 13.4 Gate B: Generative fidelity (cross-shot)
 
-Gate B runs **as soon as Gate A produces structural renders for the two-camera fixture**, in parallel with compiler work. It does not wait for the script compiler.
+Gate B runs **as soon as Gate A produces structural renders for the two-camera fixture**, in parallel with compiler work. It does not wait for the script compiler. Gate 0 (§13.1) has already answered the single-shot question by this point; Gate B's job is specifically the cross-shot question, using the model(s) Gate 0 selected.
 
 **Fixture.** The frozen kitchen, Alice, refrigerator, and can. Alice opens the refrigerator and retrieves the can. The same performance is rendered from two camera angles (A: follow-from-behind orbiting right on `fridge_door_opening`; B: static three-quarter from the kitchen side). Both are within the video model's native clip length.
 
@@ -597,7 +639,8 @@ See §11.1. The manifest is the reproducibility record.
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Video model ignores structural constraints | Final footage contradicts the simulation | Gate B with pre-committed outcomes; conventional path is a product, not a fallback. |
+| Rendered human does not meet the product bar | No product, regardless of the rest of the system | Gate 0 before any world-engine work; both conventional and generative paths judged; project stops if neither passes. |
+| Video model ignores structural constraints | Final footage contradicts the simulation | Gate 0 selects the model on a single shot; Gate B with pre-committed outcomes across shots; conventional path is a product, not a fallback. |
 | Cross-shot identity drifts under generation | Multi-shot continuity breaks | Two-camera fixture in Gate B; cold vs. chained modes; identity checks. |
 | Hand-object interactions fail in 3D | Common actions look implausible | Frozen assets, authored clips, limited IK, contact validation at critical frames. |
 | Asset / rig incompatibility | Clips authored for one rig don't transfer | Asset freeze for MVP; no retargeting requirement. |
@@ -613,14 +656,17 @@ Planning estimate for three to four experienced contributors; not a delivery com
 
 | Phase | Timeline | Deliverable |
 | --- | --- | --- |
-| IR + world foundation | Months 1–2 | IR schema; hand-authored benchmark IR; frozen assets; persistent world; action timeline; state transitions; authored clips |
-| Cinematography + structural renders | Months 2–3 | Engine-native camera rigs; event sync; lighting; two-camera fixture; conventional RGB + structural passes |
-| **Gate A review** | End of month 3 | §13.2 criteria |
-| Gate B experiment | Months 3–4, **in parallel with the row below** | §13.3 fixture, both modes, evaluation matrix, cost record, decision |
-| Script compiler | Months 4–5 | LLM → IR; validated action plans; review workflow |
-| End-to-end prototype | Month 6 | Complete benchmark from screenplay; alternate camera edit; verification report; generative mode if Gate B outcome 1 or 2 |
+| **Gate 0: Human fidelity spike** | Weeks 1–5 (1–2 people) | Hand-built 20 s scene; conventional and generative renders; acceptance-bar review; model selection; **go / no-go for everything below** |
+| IR + world foundation | Months 2–4 | IR schema; hand-authored benchmark IR; frozen assets; persistent world; action timeline; state transitions; authored clips |
+| Cinematography + structural renders | Months 3–5 | Engine-native camera rigs; event sync; lighting; two-camera fixture; conventional RGB + structural passes |
+| **Gate A review** | End of month 5 | §13.3 criteria |
+| Gate B experiment | Months 5–6, **in parallel with the row below** | §13.4 two-camera fixture with the Gate 0 model; cross-shot matrix; cost record; decision |
+| Script compiler | Months 6–7 | LLM → IR; validated action plans; review workflow |
+| End-to-end prototype | Months 8–9 | Complete benchmark from screenplay; alternate camera edit; verification report; generative mode if Gate B outcome 1 or 2 |
 
-Gate A is the first decision point: if a hand-authored scene cannot execute coherently, the compiler is not started. Gate B is the second and is independent: its outcome selects which rendering modes the month-6 prototype ships with.
+Gate 0 is the first decision point and the cheapest: if the human does not pass, nothing else is started. Gate A is the second: if a hand-authored scene cannot execute coherently, the compiler is not started. Gate B is the third and is the cross-shot extension of Gate 0: its outcome selects which rendering modes the prototype ships with.
+
+The 8–9 month total reflects the v0.2 scope with realistic animation and integration time; the 6-month figure in v0.1 assumed an animator on the team from day one, a CLI editor, and scripted rather than framework verification.
 
 ## 17. Open design questions
 
@@ -638,9 +684,9 @@ To resolve through prototypes rather than upfront specification.
 
 ## 18. Immediate next step
 
-Build the IR schema and hand-author the benchmark scene in it. Stand up the frozen asset set in the engine. Author the eight clips. Get Alice through the door and the can out of the refrigerator from two cameras, conventionally rendered, with structural passes.
+Run Gate 0 (§13.1). One MetaHuman in a marketplace kitchen, library mocap for walk / open / grasp / retract / close, one follow-and-orbit camera, 20 seconds. Render it conventionally with structural passes, push it through two or three candidate video-to-video models, and put both results in front of someone who has not been told what they are looking at.
 
-That is Gate A. The moment it produces structural renders for the two-camera fixture, start Gate B.
+Nothing else in this document is started until the human passes.
 
 ### Final design thesis
 
