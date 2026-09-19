@@ -4,7 +4,7 @@
 **Target:** Small-team prototype
 **Initial scope:** A 15–30-second cinematic sequence with persistent characters, environments, objects, and controllable cameras.
 
-**Changes from v0.2:** Added Gate 0, a human fidelity spike that runs before any world-engine work: one MetaHuman, one object interaction, one moving camera, 20 seconds, judged on whether the rendered human is acceptable — conventionally and with generative refinement. Re-sequenced the roadmap around it. Rationale: if the rendered human does not pass, the rest of the system has no product to serve.
+**Changes from v0.2:** Added Gate 0, a human fidelity spike that runs before any world-engine work: one designed character at three life stages (young adult / middle / old) built from a character definition file, one object interaction, one moving camera, 20 seconds, judged on whether the rendered human is acceptable — conventionally and with generative refinement — *and* whether the three stages stay distinct and recognizably the same person. Re-sequenced the roadmap around it. Rationale: if the rendered human does not pass, the rest of the system has no product to serve; if the variants collapse under generation, the model is a beautifier and cannot serve a product that needs specific people.
 
 **Changes from v0.1:** Split the project into two independently testable hypotheses (Gate A: virtual production, Gate B: generative fidelity). Defined the production IR as the first deliverable. Replaced generalized motion synthesis with authored action clips against a frozen asset set. Replaced the custom camera optimizer and dependency graph with engine-native camera rigs and a versioned manifest. Rewrote the feasibility experiment with a two-camera fixture, an evaluation matrix, and pre-committed outcomes. Fixed the coordinate convention, added audio to non-goals, and cleaned up formatting.
 
@@ -495,44 +495,91 @@ The MVP exposes side-by-side conventional and generative playback so reviewers c
 
 ## 13. MVP definition and gates
 
-### 13.1 Gate 0: Human fidelity spike
+### 13.1 Gate 0: Human fidelity spike — one character, three life stages
 
-Audiences forgive a wrong refrigerator; they do not forgive an uncanny human. Before any world-engine work, the project establishes whether the rendered human meets the product's bar.
+Audiences forgive a wrong refrigerator; they do not forgive an uncanny human. Before any world-engine work, the project establishes two things: that the rendered human meets the product's bar, and that the rig contract (§6.2) actually produces *different, correct, recognizably-the-same-person* results when its inputs change.
 
-**Deliverable.** A 20-second rendered scene: one human, a few actions including one object interaction, one moving camera. Judged on the human.
+The second point is why Gate 0 uses three life stages of one character rather than one stock human. A stock MetaHuman tests realism but not differentiation, and the most common generative failure is not distortion but *beautification* — the output looks fine and looks like nobody. Three variants of one person going in is the sharpest available test: if three near-identical generic faces come out, the model is collapsing identity, and that is caught in week 6 instead of month 8.
 
-**Fixture — hand-built, nothing from the pipeline.**
+**Deliverable.** A 20-second rendered scene — one object interaction, one moving camera — rendered for each of three life stages of the same character, conventionally and generatively. Judged on the human.
 
-* One MetaHuman. Nothing custom.
-* One kitchen environment from the marketplace. It is a backdrop, not a semantic world.
-* Actions: walk → turn → open refrigerator → grasp can → retract → close. **The object interaction stays in.** Hands touching things is where both conventional and generative renders fail most, and a human who cannot pick something up cannot act. Without it this is a portrait test that does not predict the real failure modes.
+**Input: a character definition file.** For the first time there is a file, not a preset. It is the seed of the IR's character schema (§5.3).
+
+```yaml
+character: alice
+canonical_rig: metahuman_adult_v1
+shared:                      # what makes it the same person — fixed across stages
+  bone_structure: ...
+  eye_spacing: ...
+  nose_shape: ...
+  distinguishing_feature: ...  # e.g. a specific asymmetry or mark
+stages:
+  young:   { age: 22, height_cm: 168, shoulder_width: 0.98, hand_size: 1.00,
+             face: { skin_age: 0.1, hairline: full } }
+  middle:  { age: 45, height_cm: 168, shoulder_width: 1.00, hand_size: 1.00,
+             face: { skin_age: 0.5, hairline: receding } }
+  old:     { age: 72, height_cm: 163, shoulder_width: 0.95, hand_size: 0.97,
+             constraints: { spine_stoop_deg: 8 },
+             face: { skin_age: 0.9, hairline: thin } }
+```
+
+Proportions and features vary per stage; the shared traits stay fixed. The `old` stage carries a constraint (stoop), so all three terms of the rig contract — canonical rig, proportions, constraints — are exercised. Each stage is built as a MetaHuman rig instance from this file via MetaHuman Creator; the file is authoritative, the Creator settings are derived.
+
+The character is a **designed** person, not a real individual. A real reference person would need consent and likeness rights before the character exists.
+
+**Fixture — hand-built, everything else held constant.**
+
+* One marketplace kitchen. Backdrop, not a semantic world.
+* Refrigerator with a door, a can.
+* Actions: walk → turn → open refrigerator → grasp can → retract → close. **The object interaction stays in.** Hands touching things is where both renderers fail most, and a human who cannot pick something up cannot act.
 * One camera: follow-from-behind, orbiting to three-quarter during the grasp. A *moving* camera stresses identity under viewpoint change; a static shot hides it.
-* Clips from a mocap library, retargeted once onto the MetaHuman, hand-fixed at contact. No authored clips, no IK system.
-* Built in Sequencer by hand. No IR, no planner, no compiler, no second camera, no verification framework.
+* The **same** library mocap clips for all three stages, retargeted once onto the canonical rig, with IK pinning at contact. Motion is deliberately *not* aged — an old woman walking like a 22-year-old will look slightly off, but that is a motion-library problem, and identical motion is what isolates the rendering and rig variables.
+* Minimal facial performance — blinks, eye darts, a small expression at the grasp — via Live Link Face or hand-keyed. A static face fails for deadness, not distortion, and that would be misattributed to the renderer.
+* 5–10 identity reference stills per stage, taken from the conventional render, as the identity-conditioning input to the generative step.
+* Built in Sequencer by hand. No IR beyond the character file, no planner, no compiler, no second camera, no verification framework.
 
-**Two renders, judged separately.**
+**Outputs.**
 
-1. **Conventional:** MetaHuman + Lumen + Movie Render Queue, RGB plus depth/normal/segmentation passes. This is the human with no generative layer.
-2. **Generative:** the conventional render and its passes through 2–3 candidate video-to-video models with structural conditioning. Selecting the candidates is week-1 work.
+1. **Three conventional renders** — MetaHuman + Lumen + Movie Render Queue, RGB plus depth/normal/segmentation passes. The human with no generative layer.
+2. **Three generative renders per candidate model** — the conventional render, its passes, and the identity stills through 2–3 video-to-video models with structural and identity conditioning. Candidates are selected in week 1.
+3. For each generative render, a single native-window clip of the grasp evaluated *before* the stitched 20 s.
+4. The scored evaluation table below.
+5. The character definition file, the render-pass setup, the retargeting recipe, and per-render cost/runtime — all reused directly by Gate A.
 
-If (1) passes, Gate B stops mattering and the risk profile of the whole project changes. If only (2) passes, the dependency on generative refinement is confirmed and the model is selected. If neither passes, the project stops here.
+**Evaluation.** In order of importance. The **Overall** and **Variant separation** rows are the test; the others explain a failure.
 
-**Acceptance bar.** The overall row is the test; the others explain a failure.
+| Check | Question | Pass |
+| --- | --- | --- |
+| **Overall** | A non-expert viewer, told nothing, does not say "that's CG" or "that's AI" within the 20 s | For each stage |
+| **Variant separation under generation** | Are the three generative outputs as different from each other as the three conventional inputs? | Age markers survive; face-embedding distances between stages roughly preserved conventional → generative. **Collapse toward one face is a fail even if each output looks realistic.** |
+| Same person | Shown all three, does a viewer say "same person at different ages"? | Yes |
+| Correct stage | Shown a reference still of one stage, does a viewer pick the matching render? | Yes, conventional and generative |
+| Contract: proportions | Do the same clips play on all three instances with the hand landing on the handle and the can? | Yes for all three via IK pinning, without re-authoring any clip. Record the hand miss *without* IK per stage — that is the measured size of the gap the contract's IK term has to close. |
+| Contract: constraints | Does the stoop apply on top of the clips without breaking contact? | Old stage visibly stooped; contact still lands |
+| Face | Same person for 20 s; no morphing under the orbit; skin and eyes do not read as CG at 1080p | Per stage |
+| Hands and contact | Fingers close on the handle and the can; no merging, extra digits, melting, or pass-through | Checked per frame at 5 critical frames, per stage |
+| Face integrity | No eye, teeth, or jaw distortion under the orbit | Checked at 3 face-closest frames, per stage |
+| Body motion | Weight and balance read as human; no foot sliding; the reach looks intentional | Per stage |
+| Hair and clothing | No flicker, boiling texture, or popping | Per stage |
+| Temporal | No warping or jitter across the 20 s, including at clip-stitch boundaries | Per stage |
 
-| Property | Bar |
+**Decision.**
+
+| Result | Decision |
 | --- | --- |
-| Face | Same person for 20 s; no morphing under the orbit; skin and eyes do not read as CG at 1080p |
-| Hands and contact | Fingers close on the handle and the can; no melting, extra fingers, or pass-through at contact frames |
-| Body motion | Weight and balance read as human; no foot sliding; the reach looks intentional |
-| Hair and clothing | No flicker, no boiling texture, no popping |
-| Temporal | No warping or jitter across the 20 s, including at any clip-stitch boundary |
-| **Overall** | **A non-expert viewer, told nothing, does not say "that's CG" or "that's AI" within the 20 s** |
+| Conventional passes all three | Generative refinement is optional. The project's biggest risk disappears. |
+| Only generative passes, with variant separation intact | Dependency on a video model is confirmed and the model is selected. Gate B later checks it across shots. |
+| Generative passes Overall but fails variant separation | The model is a beautifier. Fail. Try identity-conditioning changes or another model before concluding. |
+| Contract checks fail (hand misses on one stage even with IK) | The rig contract needs work before Gate A, but this is fixable and does not stop the project. |
+| Neither renderer passes | Stop. Nothing downstream has a product to serve. |
 
-**On the 20 seconds.** Most video models generate 5–10 s natively, so 20 s forces the long-sequence problem (§10.4) immediately. Evaluate a single native-window clip of the grasp *first*, then the full stitched 20 s, and report both — otherwise a stitching failure masks a per-clip success or vice versa.
+**On the 20 seconds.** Most video models generate 5–10 s natively, so 20 s forces the long-sequence problem (§10.4) immediately. The native-window grasp clip is evaluated first and reported separately, so a stitching failure does not mask a per-clip success or vice versa.
 
-**Cost.** 3–5 weeks with two people (one on Unreal, one on the model pipeline and eval; the halves are independent until the render exists). 6–8 weeks with one person doing both in sequence. No animator required; library mocap is sufficient for a fidelity test. The only outside input is the non-expert viewer judgment at the end.
+**On a child stage.** A child is not a proportions change; it is a different rig family (§6.2). MetaHuman ships adult bodies only. A child would need its own rig and clips and is a separate spike after Gate 0 if the product requires it.
 
-**What transfers.** Everything. The renderer does not care whether a planner or a person placed the keyframes, so a human that passes here passes in the full pipeline. What this does *not* test — persistence, multi-camera, editability — is exactly what Gate A tests, and Gate A is only worth running if Gate 0 passes.
+**Cost.** 5–7 weeks with two people — one on Unreal (character stages, retarget, IK pinning, camera, render passes), one on the model pipeline and eval; the halves are independent until the renders exist. 8–10 weeks with one person in sequence. Face aging done well in MetaHuman Creator is most of the increase over a single-character spike; body proportions are sliders. No animator required. The outside input is the viewer judgments at the end.
+
+**What transfers.** Everything. The renderer does not care whether a planner or a person placed the keyframes, so a human that passes here passes in the full pipeline; the character file and rig instances go straight into the asset registry. What this does *not* test — persistence, multi-camera, editability — is exactly what Gate A tests, and Gate A is only worth running if Gate 0 passes.
 
 ### 13.2 Demonstration sequence
 
@@ -656,8 +703,8 @@ Planning estimate for three to four experienced contributors; not a delivery com
 
 | Phase | Timeline | Deliverable |
 | --- | --- | --- |
-| **Gate 0: Human fidelity spike** | Weeks 1–5 (1–2 people) | Hand-built 20 s scene; conventional and generative renders; acceptance-bar review; model selection; **go / no-go for everything below** |
-| IR + world foundation | Months 2–4 | IR schema; hand-authored benchmark IR; frozen assets; persistent world; action timeline; state transitions; authored clips |
+| **Gate 0: Human fidelity spike** | Weeks 1–7 (1–2 people) | Character definition file; three life-stage rig instances; hand-built 20 s scene; conventional and generative renders per stage; evaluation incl. variant separation; model selection; **go / no-go for everything below** |
+| IR + world foundation | Months 2.5–4.5 | IR schema; hand-authored benchmark IR; frozen assets; persistent world; action timeline; state transitions; authored clips |
 | Cinematography + structural renders | Months 3–5 | Engine-native camera rigs; event sync; lighting; two-camera fixture; conventional RGB + structural passes |
 | **Gate A review** | End of month 5 | §13.3 criteria |
 | Gate B experiment | Months 5–6, **in parallel with the row below** | §13.4 two-camera fixture with the Gate 0 model; cross-shot matrix; cost record; decision |
@@ -684,7 +731,7 @@ To resolve through prototypes rather than upfront specification.
 
 ## 18. Immediate next step
 
-Run Gate 0 (§13.1). One MetaHuman in a marketplace kitchen, library mocap for walk / open / grasp / retract / close, one follow-and-orbit camera, 20 seconds. Render it conventionally with structural passes, push it through two or three candidate video-to-video models, and put both results in front of someone who has not been told what they are looking at.
+Run Gate 0 (§13.1). Write the character definition file for one designed person at three life stages. Build the three MetaHuman instances. Put each through the same marketplace kitchen, the same library mocap for walk / open / grasp / retract / close, and the same follow-and-orbit camera, for 20 seconds. Render conventionally with structural passes, push through two or three candidate video-to-video models with identity conditioning, and put the results in front of someone who has not been told what they are looking at — including the question "is this the same person?"
 
 Nothing else in this document is started until the human passes.
 
