@@ -3,7 +3,8 @@
 # This file is the seed of the production IR's character schema (design doc §5.3, §6.2).
 #
 # Conventions: engine-native (Unreal). Z-up, left-handed, centimeters.
-# Scale factors are relative to the canonical rig's default proportions (1.00 = default).
+# Body proportions are REAL MEASUREMENTS in cm, matching the fields of the UE 5.8 MetaHuman
+# Character editor's Body > Model > Parametric tool, so they can be typed in directly.
 
 character: alice
 canonical_rig: metahuman_adult_v1          # shared skeleton; hierarchy + bind pose fixed
@@ -13,7 +14,8 @@ version: 1
 # These are written as MetaHuman Creator terms so they can be set once and locked.
 shared:
   sex: female
-  ethnicity_blend: "TODO — pick 2 MetaHuman presets and blend weights; record them here"
+  base_preset: "TODO — name of the MetaHuman preset chosen in the Blend tool"
+  blend: "TODO — if blended from up to 4 presets, list them with handle weights"
   bone_structure:
     face_width: 1.00
     jaw: narrow
@@ -31,13 +33,17 @@ shared:
 stages:
   young:
     age: 22
-    height_cm: 168
-    proportions:
-      shoulder_width: 0.98
-      hip_width: 1.00
-      arm_length: 1.00
-      hand_size: 1.00
-      neck_length: 1.02
+    proportions_cm:                        # MetaHuman Body > Model > Parametric field names
+      Height: 168
+      AcrossShoulder: 36.0
+      Hip: 95
+      Waist: 70
+      Chest: 86
+      UpperArmLength: 30.0
+      LowerArmLength: 24.5
+      HandCircumference: 18.5
+      NeckLength: 11.5
+      Neck: 32
     face:
       skin_age: 0.10                       # MetaHuman "Age"/wrinkle intensity, 0–1
       skin_detail: light
@@ -47,13 +53,17 @@ stages:
 
   middle:
     age: 45
-    height_cm: 168
-    proportions:
-      shoulder_width: 1.00
-      hip_width: 1.04
-      arm_length: 1.00
-      hand_size: 1.00
-      neck_length: 1.02
+    proportions_cm:
+      Height: 168
+      AcrossShoulder: 36.5
+      Hip: 99
+      Waist: 76
+      Chest: 90
+      UpperArmLength: 30.0
+      LowerArmLength: 24.5
+      HandCircumference: 18.5
+      NeckLength: 11.5
+      Neck: 33
     face:
       skin_age: 0.50
       skin_detail: medium                  # nasolabial folds, crow's feet
@@ -63,13 +73,17 @@ stages:
 
   old:
     age: 72
-    height_cm: 163                         # height loss with age
-    proportions:
-      shoulder_width: 0.95
-      hip_width: 1.04
-      arm_length: 1.00                     # arms don't shorten; reach geometry changes via stoop
-      hand_size: 0.97
-      neck_length: 1.00
+    proportions_cm:
+      Height: 163                          # height loss with age
+      AcrossShoulder: 34.5
+      Hip: 99
+      Waist: 80
+      Chest: 90
+      UpperArmLength: 30.0                 # arms don't shorten; reach geometry changes via stoop
+      LowerArmLength: 24.5
+      HandCircumference: 18.0
+      NeckLength: 11.0
+      Neck: 33
     face:
       skin_age: 0.90
       skin_detail: heavy                   # jowls, deep folds, thinning lips
