@@ -1,0 +1,18 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.8",
+	"Category": "",
+	"Description": "Gate 0 human fidelity spike - see ../../README.md",
+	"Plugins": [
+		{ "Name": "MetaHumanCharacter", "Enabled": true },
+		{ "Name": "MetaHumanSDK", "Enabled": true },
+		{ "Name": "MovieRenderPipeline", "Enabled": true },
+		{ "Name": "PythonScriptPlugin", "Enabled": true },
+		{ "Name": "SequencerScripting", "Enabled": true },
+		{ "Name": "ControlRig", "Enabled": true },
+		{ "Name": "FullBodyIK", "Enabled": true },
+		{ "Name": "IKRig", "Enabled": true },
+		{ "Name": "LiveLinkFaceImporter", "Enabled": true },
+		{ "Name": "MetaHumanLiveLink", "Enabled": true }
+	]
+}

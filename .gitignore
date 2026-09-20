@@ -8,3 +8,11 @@ Saved/
 Intermediate/
 DerivedDataCache/
 .DS_Store
+# Unreal project build products (project itself lives in gate0/unreal/Gate0)
+gate0/unreal/Gate0/Binaries/
+gate0/unreal/Gate0/Build/
+gate0/unreal/Gate0/DerivedDataCache/
+gate0/unreal/Gate0/Intermediate/
+gate0/unreal/Gate0/Saved/
+gate0/unreal/Gate0/.vs/
+gate0/unreal/Gate0/*.xcworkspace

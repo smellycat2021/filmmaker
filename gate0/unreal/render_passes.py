@@ -11,21 +11,20 @@ Outputs to gate0/renders/<stage>/ as an EXR sequence with these layers:
     FinalImage      RGB (Lumen)
     WorldDepth      depth — MRQ ships this post-process material
     MotionVectors   MRQ ships this post-process material
-    WorldNormal     TODO: MRQ does not ship one; make a 2-node post-process material that
-                    outputs WorldNormal to Emissive and set its path below
+    WorldNormal     MRQ ships this post-process material (5.8)
     ObjectId        segmentation, via the Object Ids render pass
 
 Then `ffmpeg` the FinalImage layer to an mp4 for the viewers, and keep the EXRs for
 conditioning the generative step.
 
-Verified against UE 5.4 API names; check for renames on other versions.
+Written for UE 5.8.2.
 """
 import unreal
 
-# TODO: set after creating the normal-output post-process material.
-WORLD_NORMAL_MATERIAL = None  # e.g. "/Game/Gate0/PP_WorldNormal"
+WORLD_NORMAL_MATERIAL = "/MovieRenderPipeline/Materials/MovieRenderQueue_WorldNormal"
 
-OUT_ROOT = "{project_dir}/../gate0/renders"  # MRQ expands {project_dir}
+# Project lives at gate0/unreal/Gate0/, renders go to gate0/renders/. MRQ expands {project_dir}.
+OUT_ROOT = "{project_dir}/../../renders"
 
 
 def render(sequence_path: str, stage: str, resolution=(1920, 1080), fps=24):
