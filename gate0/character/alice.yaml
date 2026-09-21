@@ -44,7 +44,7 @@ stages:
       NeckLength: preset_default           # ___
       Neck: preset_default                 # ___
     face:                                  # young = Celeste default skin, no edits
-      skin_face_texture: preset_default    # Materials > Skin > Face (HF detail map)
+      skin_face_texture_index: preset_default   # Materials > Skin > Face (HF detail map), int
       skin_roughness: preset_default       # Materials > Skin > Roughness (0.85–1.15)
       sculpt_aging: none
       hair: preset_default
@@ -62,7 +62,7 @@ stages:
       NeckLength: young
       Neck: "young + 1"
     face:
-      skin_face_texture: "more pore/wrinkle detail than young"   # pick a mid-detail HF map
+      skin_face_texture_index: preset_default   # set to the index with more detail once seen in the editor
       skin_roughness: "young + 0.03"
       sculpt_aging: "light nasolabial folds, slight crow's feet; keep the 3 asymmetries"
       hair: "grey at temples"
@@ -81,7 +81,7 @@ stages:
       Neck: "young + 1"
       # arm lengths stay at default; reach geometry changes via the stoop constraint below
     face:
-      skin_face_texture: "highest wrinkle/pore detail available"
+      skin_face_texture_index: preset_default   # set to the highest-detail index once seen
       skin_roughness: "young + 0.08"
       sculpt_aging: "cheeks pulled down, jowls, deep nasolabial folds, thinner lips; keep the 3 asymmetries"
       hair: "grey-white, thinner"
