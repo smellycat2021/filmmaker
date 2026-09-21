@@ -54,7 +54,7 @@ AGING_REGIONS = {
     "mouth_corners": (0.15, 0.40, 0.26, 0.40, (0.0, 0.0, -0.50)),
     "upper_lip":     (0.00, 0.18, 0.33, 0.38, (0.0, 0.0, -0.15)),
 }
-AGING_STRENGTH = {"young": 0.0, "middle": 0.45, "old": 1.0}
+AGING_STRENGTH = {"young": 0.0, "middle": 0.45, "old": 1.0, "extreme": 2.5}
 
 
 def load_yaml():
