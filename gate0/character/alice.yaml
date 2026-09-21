@@ -35,14 +35,15 @@ stages:
   young:
     age: 22
     proportions_cm:                        # MetaHuman Body > Model > Parametric field names
-      Height: preset_default               # record Celeste's value here once read: ___
-      AcrossShoulder: preset_default       # ___
-      Hip: preset_default                  # ___
-      Waist: preset_default                # ___
-      Chest: preset_default                # ___
-      HandCircumference: preset_default    # ___
-      NeckLength: preset_default           # ___
-      Neck: preset_default                 # ___
+      Height: preset_default               # Celeste default = 168.0  (dumped 2026-09-21)
+      AcrossShoulder: preset_default       # 33.7
+      Hip: preset_default                  # 101.3
+      Waist: preset_default                # 85.8
+      Chest: preset_default                # 103.3
+      HandCircumference: preset_default    # 19.8
+      NeckLength: preset_default           # 7.3
+      Neck: preset_default                 # 36.4
+      Fat: preset_default                  # 0.06  (range -2.8 .. 2.8)
     face:                                  # young = Celeste default skin, no edits
       skin_face_texture_index: preset_default   # Materials > Skin > Face (HF detail map), int
       skin_roughness: preset_default       # Materials > Skin > Roughness (0.85–1.15)
@@ -61,6 +62,7 @@ stages:
       HandCircumference: young
       NeckLength: young
       Neck: "young + 1"
+      Fat: "young + 0.3"
     face:
       skin_face_texture_index: preset_default   # set to the index with more detail once seen in the editor
       skin_roughness: "young + 0.03"
@@ -79,6 +81,7 @@ stages:
       HandCircumference: "young - 0.5"
       NeckLength: "young - 0.5"
       Neck: "young + 1"
+      Fat: "young + 0.6"
       # arm lengths stay at default; reach geometry changes via the stoop constraint below
     face:
       skin_face_texture_index: preset_default   # set to the highest-detail index once seen

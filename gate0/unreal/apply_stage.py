@@ -32,7 +32,13 @@ ASSET_DIR = "/Game"
 
 # Body constraint names as MetaHuman reports them (tooltip keys). Anything in the yaml that
 # isn't a real constraint name is reported and skipped.
-BODY_ALIASES = {}
+BODY_ALIASES = {
+    "Height": "Height", "AcrossShoulder": "Across Shoulder", "Chest": "Chest", "Waist": "Waist",
+    "Hip": "Hip", "HighHip": "High Hip", "HandCircumference": "Hand Circumference",
+    "NeckLength": "Neck Length", "Neck": "Neck", "NeckBase": "Neck Base",
+    "UpperArmLength": "Upper Arm Length", "LowerArmLength": "Lower Arm Length",
+    "ShoulderHeight": "Shoulder Height", "Fat": "Fat", "Muscularity": "Muscularity",
+}
 
 # Face landmark regions for first-pass aging. Landmarks are selected by position relative to the
 # face's own bounding box (x = left/right, z = up/down in MetaHuman's face space). Tune after
