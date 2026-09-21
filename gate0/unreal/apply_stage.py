@@ -188,12 +188,14 @@ def apply_face_aging(sub, character, strength):
     return summary
 
 
-def dump():
+def dump(asset=None):
     close_all_asset_editors()
     sub = get_subsystem()
-    c = load_character(BASE_ASSET)
+    path = f"{ASSET_DIR}/{asset}" if asset else BASE_ASSET
+    log(f"dumping {path}")
+    c = load_character(path)
     sub.try_add_object_to_edit(c)
-    log("body constraints on base:")
+    log(f"body constraints on {path}:")
     for n, k in sorted(constraints_by_name(sub, c).items()):
         log(f"  {n:22s} {float(k.target_measurement):8.2f}  [{float(k.min_measurement):.1f} .. {float(k.max_measurement):.1f}]  active={bool(k.is_active)}")
     skin = c.get_editor_property("skin_settings").get_editor_property("skin")
@@ -242,7 +244,7 @@ def run(stage):
 if __name__ == "__main__":
     arg = (sys.argv[1] if len(sys.argv) > 1 else "").lower()
     if arg == "dump":
-        dump()
+        dump(sys.argv[2] if len(sys.argv) > 2 else None)
     elif arg:
         run(arg)
     else:
