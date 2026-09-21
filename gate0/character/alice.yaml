@@ -14,8 +14,8 @@ version: 1
 # These are written as MetaHuman Creator terms so they can be set once and locked.
 shared:
   sex: female
-  base_preset: "TODO — name of the MetaHuman preset chosen in the Blend tool"
-  blend: "TODO — if blended from up to 4 presets, list them with handle weights"
+  base_preset: Celeste                  # MetaHuman 5.8 Core Data preset, applied 2026-09-21
+  blend: none                            # single preset, no blending
   bone_structure:
     face_width: 1.00
     jaw: narrow
