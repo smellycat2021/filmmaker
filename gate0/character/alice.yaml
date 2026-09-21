@@ -20,19 +20,16 @@ shared:
   sex: female
   base_preset: Celeste                  # MetaHuman 5.8 Core Data preset, applied 2026-09-21
   blend: none                            # single preset, no blending
-  bone_structure:
-    face_width: 1.00
-    jaw: narrow
-    cheekbones: high
-    brow_ridge: 0.95
-  eye_spacing: 1.03                        # slightly wide-set — deliberate, non-generic
-  nose_shape: "slight dorsal hump, narrow bridge"
-  mouth_width: 0.97
+  # Built in the UE 5.8 MetaHuman Character editor from the Celeste preset (2026-09-21).
+  # All edits below are ONE-SIDED (Symmetric Manipulation off) — the asymmetry IS the identity.
   distinguishing_features:
-    - "left eyebrow sits ~2 mm higher than right (asymmetry)"
-    - "small mole below right eye, ~1 cm lateral of the outer canthus"
-  eye_color: "grey-green"
-  # Non-generic on purpose. If a stock preset looks like this without edits, change it.
+    - "model's LEFT eye sits lower than the right"
+    - "model's LEFT eyebrow is lifted relative to the right"
+    - "model's LEFT side of the face is dragged down (cheek/jaw lower than the right)"
+  # Everything else (bone structure, eye spacing, nose, mouth) is Celeste's default.
+  # These three must be visible at every age stage and are the checklist for the
+  # beautifier test: if the generative output re-symmetrizes her, that is a FAIL.
+  eye_color: preset_default
 
 stages:
   young:
