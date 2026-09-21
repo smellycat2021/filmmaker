@@ -20,8 +20,9 @@ What it does for a stage:
      lips thinner). Symmetric per side, so the base's asymmetries are preserved.
   5. saves the asset and prints what it changed
 
-Then open alice_<stage> in the editor and judge it. Adjust the yaml, re-run. The script closes
-all open asset editors first (an open MetaHuman editor crashes when its target changes).
+Then open alice_<stage> in the editor and judge it. Adjust the yaml, re-run.
+CLOSE ALL CHARACTER EDITOR TABS BEFORE RUNNING. The script checks and refuses otherwise —
+editing or closing a character that has an open editor crashes UE 5.8.
 """
 import re, sys, os
 import unreal
@@ -82,17 +83,20 @@ def get_subsystem():
     return unreal.get_editor_subsystem(unreal.MetaHumanCharacterEditorSubsystem)
 
 
-def close_all_asset_editors():
-    # A MetaHuman character editor left open (esp. with the Skin tool active) asserts when its
-    # target changes under it. Close every asset editor before touching characters.
-    aes = unreal.get_editor_subsystem(unreal.AssetEditorSubsystem)
-    n = 0
+def refuse_if_any_character_open(sub):
+    # An open MetaHuman character editor has its character "added for editing". Pulling that out
+    # from under the editor (remove_object_to_edit) or closing the tab from script both crash the
+    # editor in 5.8. So: detect and refuse; the user closes the tab by hand.
+    open_names = []
     for path in unreal.EditorAssetLibrary.list_assets(ASSET_DIR, recursive=True, include_folder=False):
-        obj = unreal.load_asset(path.split(".")[0]) if unreal.EditorAssetLibrary.does_asset_exist(path.split(".")[0]) else None
-        if obj and isinstance(obj, unreal.MetaHumanCharacter):
-            aes.close_all_editors_for_asset(obj)
-            n += 1
-    log(f"closed editors for {n} character asset(s)")
+        obj_path = path.split(".")[0]
+        if not unreal.EditorAssetLibrary.does_asset_exist(obj_path):
+            continue
+        obj = unreal.load_asset(obj_path)
+        if isinstance(obj, unreal.MetaHumanCharacter) and sub.is_object_added_for_editing(obj):
+            open_names.append(obj.get_name())
+    if open_names:
+        raise SystemExit(f"[apply_stage] REFUSING TO RUN: close the editor tab(s) for {open_names} first, then re-run.")
 
 
 def load_character(path):
@@ -192,8 +196,8 @@ def apply_face_aging(sub, character, strength):
 
 
 def dump(asset=None):
-    close_all_asset_editors()
     sub = get_subsystem()
+    refuse_if_any_character_open(sub)
     path = f"{ASSET_DIR}/{asset}" if asset else BASE_ASSET
     log(f"dumping {path}")
     c = load_character(path)
@@ -217,8 +221,8 @@ def run(stage):
         raise SystemExit(f"stage must be one of {list(spec['stages'])}")
     st = spec["stages"][stage]
     target = f"{ASSET_DIR}/alice_{stage}"
-    close_all_asset_editors()
     sub = get_subsystem()
+    refuse_if_any_character_open(sub)
 
     if unreal.EditorAssetLibrary.does_asset_exist(target):
         log(f"{target} exists — deleting and re-creating from base")
