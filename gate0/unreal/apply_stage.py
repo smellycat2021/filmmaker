@@ -20,8 +20,8 @@ What it does for a stage:
      lips thinner). Symmetric per side, so the base's asymmetries are preserved.
   5. saves the asset and prints what it changed
 
-Then open alice_<stage> in the editor and judge it. Adjust the yaml, re-run. The editor
-must NOT have the target asset open while this runs (close its tab first).
+Then open alice_<stage> in the editor and judge it. Adjust the yaml, re-run. The script closes
+all open asset editors first (an open MetaHuman editor crashes when its target changes).
 """
 import re, sys, os
 import unreal
@@ -80,6 +80,16 @@ def resolve(expr, base):
 
 def get_subsystem():
     return unreal.get_editor_subsystem(unreal.MetaHumanCharacterEditorSubsystem)
+
+
+def close_all_asset_editors():
+    # A MetaHuman character editor left open (esp. with the Skin tool active) asserts when its
+    # target changes under it. Close every asset editor before touching characters.
+    aes = unreal.get_editor_subsystem(unreal.AssetEditorSubsystem)
+    opened = aes.get_all_edited_assets()
+    if opened:
+        log(f"closing {len(opened)} open asset editor(s): {[a.get_name() for a in opened]}")
+        aes.close_all_asset_editors()
 
 
 def load_character(path):
@@ -179,6 +189,7 @@ def apply_face_aging(sub, character, strength):
 
 
 def dump():
+    close_all_asset_editors()
     sub = get_subsystem()
     c = load_character(BASE_ASSET)
     sub.try_add_object_to_edit(c)
@@ -201,6 +212,7 @@ def run(stage):
         raise SystemExit(f"stage must be one of {list(spec['stages'])}")
     st = spec["stages"][stage]
     target = f"{ASSET_DIR}/alice_{stage}"
+    close_all_asset_editors()
     sub = get_subsystem()
 
     if unreal.EditorAssetLibrary.does_asset_exist(target):
