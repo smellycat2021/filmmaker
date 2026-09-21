@@ -93,23 +93,6 @@ stages:
       # This is the only "character-specific constraint" in Gate 0.
       # It must NOT break contact at the fridge handle or the can — that's a scored check.
 
-# Every stage plays the SAME clips. Motion is deliberately not aged (design doc §13.1).
-motion:
-  clips: [walk, turn, open_fridge, reach_grasp, retract, close_fridge]
-  source: "TODO — library name + clip IDs once chosen (Fab / Mixamo / other)"
-  retarget: once, onto canonical_rig
-  contact_ik:
-    events: [reach_target, grip_established, release]
-    targets: [fridge_01.handle, soda_can_01.grasp_point]
-  face:
-    source: "live_link_face | hand_keyed"
-    minimum: [blink_x3, eye_dart_x2, small_expression_at_grasp]
-
-# Identity conditioning input for the generative step — taken FROM the conventional render.
-identity_refs:
-  per_stage: 8
-  frames: "3 face-closest during orbit, 2 profile, 3 full-body"
-
   # TEMPORARY diagnostic stage — not a real life stage. Changes so large they cannot be missed.
   # If alice_extreme looks identical to alice in the editor, the preview is not rebuilding from
   # the saved state. Delete this block once that question is settled.
@@ -127,3 +110,19 @@ identity_refs:
       hair: preset_default
     constraints: {}
 
+# Every stage plays the SAME clips. Motion is deliberately not aged (design doc §13.1).
+motion:
+  clips: [walk, turn, open_fridge, reach_grasp, retract, close_fridge]
+  source: "TODO — library name + clip IDs once chosen (Fab / Mixamo / other)"
+  retarget: once, onto canonical_rig
+  contact_ik:
+    events: [reach_target, grip_established, release]
+    targets: [fridge_01.handle, soda_can_01.grasp_point]
+  face:
+    source: "live_link_face | hand_keyed"
+    minimum: [blink_x3, eye_dart_x2, small_expression_at_grasp]
+
+# Identity conditioning input for the generative step — taken FROM the conventional render.
+identity_refs:
+  per_stage: 8
+  frames: "3 face-closest during orbit, 2 profile, 3 full-body"
