@@ -18,16 +18,16 @@ open --arch arm64 -a "Epic Games Launcher"
 
 ## Character stages (apply_stage.py)
 
-Reads `gate0/character/alice.yaml`. The base asset `MHC_Alice_Base` is never modified;
-each stage is created as a fresh duplicate `MHC_Alice_<Stage>`. Close the asset's editor tab
+Reads `gate0/character/alice.yaml`. The base asset `alice` is never modified;
+each stage is created as a fresh duplicate `alice_<stage>`. Close the asset's editor tab
 before running — the script can't edit an asset that's open.
 
 | Command | What it does |
 | --- | --- |
 | `py "/Users/na/FilmMaker/gate0/unreal/apply_stage.py" dump` | Print the base's body measurements, skin values, and face landmarks. Changes nothing. |
-| `py "/Users/na/FilmMaker/gate0/unreal/apply_stage.py" young` | Create `MHC_Alice_Young` (= base, no changes). |
-| `py "/Users/na/FilmMaker/gate0/unreal/apply_stage.py" middle` | Create `MHC_Alice_Middle` with the middle-age deltas. |
-| `py "/Users/na/FilmMaker/gate0/unreal/apply_stage.py" old` | Create `MHC_Alice_Old` with the old-age deltas. |
+| `py "/Users/na/FilmMaker/gate0/unreal/apply_stage.py" young` | Create `alice_young` (= base, no changes). |
+| `py "/Users/na/FilmMaker/gate0/unreal/apply_stage.py" middle` | Create `alice_middle` with the middle-age deltas. |
+| `py "/Users/na/FilmMaker/gate0/unreal/apply_stage.py" old` | Create `alice_old` with the old-age deltas. |
 
 Iterate: open the stage asset in the Content Drawer → judge → edit `alice.yaml` → re-run the
 same command (it deletes and re-creates the stage asset from the base).

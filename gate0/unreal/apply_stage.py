@@ -12,7 +12,7 @@ Run inside the Unreal Editor. Output Log -> switch the command box to "Python" (
     py "/Users/na/FilmMaker/gate0/unreal/apply_stage.py" dump      # print landmark + body info
 
 What it does for a stage:
-  1. duplicates /Game/MHC_Alice_Base -> /Game/MHC_Alice_<Stage>  (base is never modified)
+  1. duplicates /Game/alice -> /Game/alice_<stage>  (base is never modified)
   2. body: resolves the stage's proportions_cm (numbers or "young + 4" / "young * 0.96"
      expressions against the base's current measurements) and sets the parametric constraints
   3. skin: roughness delta and face texture index
@@ -20,14 +20,14 @@ What it does for a stage:
      lips thinner). Symmetric per side, so the base's asymmetries are preserved.
   5. saves the asset and prints what it changed
 
-Then open MHC_Alice_<Stage> in the editor and judge it. Adjust the yaml, re-run. The editor
+Then open alice_<stage> in the editor and judge it. Adjust the yaml, re-run. The editor
 must NOT have the target asset open while this runs (close its tab first).
 """
 import re, sys, os
 import unreal
 
 YAML_PATH = "/Users/na/FilmMaker/gate0/character/alice.yaml"
-BASE_ASSET = "/Game/MHC_Alice_Base"
+BASE_ASSET = "/Game/alice"
 ASSET_DIR = "/Game"
 
 # Body constraint names as MetaHuman reports them (tooltip keys). Anything in the yaml that
@@ -194,7 +194,7 @@ def run(stage):
     if stage not in spec["stages"]:
         raise SystemExit(f"stage must be one of {list(spec['stages'])}")
     st = spec["stages"][stage]
-    target = f"{ASSET_DIR}/MHC_Alice_{stage.capitalize()}"
+    target = f"{ASSET_DIR}/alice_{stage}"
     sub = get_subsystem()
 
     if unreal.EditorAssetLibrary.does_asset_exist(target):
