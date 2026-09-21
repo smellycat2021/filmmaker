@@ -5,6 +5,10 @@
 # Conventions: engine-native (Unreal). Z-up, left-handed, centimeters.
 # Body proportions are REAL MEASUREMENTS in cm, matching the fields of the UE 5.8 MetaHuman
 # Character editor's Body > Model > Parametric tool, so they can be typed in directly.
+# Method: the base preset's (Celeste's) defaults ARE the young stage, except Height. Middle and
+# old are deltas from young. Fields not listed stay at the preset default at every stage.
+# AcrossShoulder in MetaHuman is NOT full back width (default is much smaller than ~38 cm) — it is
+# left at the preset default for young and scaled by percentage for the other stages.
 
 character: alice
 canonical_rig: metahuman_adult_v1          # shared skeleton; hierarchy + bind pose fixed
@@ -35,15 +39,13 @@ stages:
     age: 22
     proportions_cm:                        # MetaHuman Body > Model > Parametric field names
       Height: 168
-      AcrossShoulder: 36.0
-      Hip: 95
-      Waist: 70
-      Chest: 86
-      UpperArmLength: 30.0
-      LowerArmLength: 24.5
-      HandCircumference: 18.5
-      NeckLength: 11.5
-      Neck: 32
+      AcrossShoulder: preset_default       # record Celeste's value here once read: ___
+      Hip: preset_default                  # ___
+      Waist: preset_default                # ___
+      Chest: preset_default                # ___
+      HandCircumference: preset_default    # ___
+      NeckLength: preset_default           # ___
+      Neck: preset_default                 # ___
     face:
       skin_age: 0.10                       # MetaHuman "Age"/wrinkle intensity, 0–1
       skin_detail: light
@@ -53,17 +55,15 @@ stages:
 
   middle:
     age: 45
-    proportions_cm:
+    proportions_cm:                        # deltas from young
       Height: 168
-      AcrossShoulder: 36.5
-      Hip: 99
-      Waist: 76
-      Chest: 90
-      UpperArmLength: 30.0
-      LowerArmLength: 24.5
-      HandCircumference: 18.5
-      NeckLength: 11.5
-      Neck: 33
+      AcrossShoulder: "young * 1.015"
+      Hip: "young + 4"
+      Waist: "young + 6"
+      Chest: "young + 4"
+      HandCircumference: young
+      NeckLength: young
+      Neck: "young + 1"
     face:
       skin_age: 0.50
       skin_detail: medium                  # nasolabial folds, crow's feet
@@ -73,17 +73,16 @@ stages:
 
   old:
     age: 72
-    proportions_cm:
+    proportions_cm:                        # deltas from young
       Height: 163                          # height loss with age
-      AcrossShoulder: 34.5
-      Hip: 99
-      Waist: 80
-      Chest: 90
-      UpperArmLength: 30.0                 # arms don't shorten; reach geometry changes via stoop
-      LowerArmLength: 24.5
-      HandCircumference: 18.0
-      NeckLength: 11.0
-      Neck: 33
+      AcrossShoulder: "young * 0.96"
+      Hip: "young + 4"
+      Waist: "young + 10"
+      Chest: "young + 4"
+      HandCircumference: "young - 0.5"
+      NeckLength: "young - 0.5"
+      Neck: "young + 1"
+      # arm lengths stay at default; reach geometry changes via the stoop constraint below
     face:
       skin_age: 0.90
       skin_detail: heavy                   # jowls, deep folds, thinning lips
