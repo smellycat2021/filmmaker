@@ -73,15 +73,15 @@ stages:
   old:
     age: 72
     proportions_cm:                        # deltas from young
-      Height: "young - 5"                  # height loss with age
+      Height: "young - 7"                  # height loss with age
       AcrossShoulder: "young * 0.96"
       Hip: "young + 4"
-      Waist: "young + 10"
+      Waist: "young + 14"
       Chest: "young + 4"
       HandCircumference: "young - 0.5"
       NeckLength: "young - 0.5"
       Neck: "young + 1"
-      Fat: "young + 0.6"
+      Fat: "young + 1.5"                   # bold first pass; dial back after visual check
       # arm lengths stay at default; reach geometry changes via the stoop constraint below
     face:
       skin_face_texture_index: preset_default   # set to the highest-detail index once seen
