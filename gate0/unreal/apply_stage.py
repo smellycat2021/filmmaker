@@ -21,8 +21,8 @@ What it does for a stage:
   5. saves the asset and prints what it changed
 
 Then open alice_<stage> in the editor and judge it. Adjust the yaml, re-run.
-CLOSE ALL CHARACTER EDITOR TABS BEFORE RUNNING. The script checks and refuses otherwise —
-editing or closing a character that has an open editor crashes UE 5.8.
+Close the editor tab of the stage asset you are re-creating before running (the script refuses
+otherwise). Other tabs, including the base, may stay open; dump is read-only and works either way.
 """
 import re, sys, os
 import unreal
@@ -83,20 +83,26 @@ def get_subsystem():
     return unreal.get_editor_subsystem(unreal.MetaHumanCharacterEditorSubsystem)
 
 
-def refuse_if_any_character_open(sub):
-    # An open MetaHuman character editor has its character "added for editing". Pulling that out
-    # from under the editor (remove_object_to_edit) or closing the tab from script both crash the
-    # editor in 5.8. So: detect and refuse; the user closes the tab by hand.
-    open_names = []
-    for path in unreal.EditorAssetLibrary.list_assets(ASSET_DIR, recursive=True, include_folder=False):
-        obj_path = path.split(".")[0]
-        if not unreal.EditorAssetLibrary.does_asset_exist(obj_path):
-            continue
-        obj = unreal.load_asset(obj_path)
-        if isinstance(obj, unreal.MetaHumanCharacter) and sub.is_object_added_for_editing(obj):
-            open_names.append(obj.get_name())
-    if open_names:
-        raise SystemExit(f"[apply_stage] REFUSING TO RUN: close the editor tab(s) for {open_names} first, then re-run.")
+def refuse_if_open(sub, character):
+    # Adding/removing edit state on a character that has an open editor tab crashes UE 5.8
+    # (the tab's tools lose their target). Only the asset we are about to MODIFY must be closed.
+    if sub.is_object_added_for_editing(character):
+        raise SystemExit(f"[apply_stage] REFUSING TO RUN: '{character.get_name()}' has an open editor tab. Close it, then re-run.")
+
+
+class EditSession:
+    """Add a character for editing only if it isn't already; remove only what we added."""
+    def __init__(self, sub, character):
+        self.sub, self.c, self.added = sub, character, False
+    def __enter__(self):
+        if not self.sub.is_object_added_for_editing(self.c):
+            if not self.sub.try_add_object_to_edit(self.c):
+                raise RuntimeError("could not add character for editing")
+            self.added = True
+        return self.c
+    def __exit__(self, *exc):
+        if self.added:
+            self.sub.remove_object_to_edit(self.c)
 
 
 def load_character(path):
@@ -197,11 +203,10 @@ def apply_face_aging(sub, character, strength):
 
 def dump(asset=None):
     sub = get_subsystem()
-    refuse_if_any_character_open(sub)
     path = f"{ASSET_DIR}/{asset}" if asset else BASE_ASSET
     log(f"dumping {path}")
     c = load_character(path)
-    sub.try_add_object_to_edit(c)
+    session = EditSession(sub, c); session.__enter__()
     log(f"body constraints on {path}:")
     for n, k in sorted(constraints_by_name(sub, c).items()):
         log(f"  {n:22s} {float(k.target_measurement):8.2f}  [{float(k.min_measurement):.1f} .. {float(k.max_measurement):.1f}]  active={bool(k.is_active)}")
@@ -212,7 +217,7 @@ def dump(asset=None):
     log(f"face landmarks: {len(lms)}  x[{x0:.2f},{x1:.2f}] z[{z0:.2f},{z1:.2f}]")
     for i, p in enumerate(lms):
         log(f"  lm{i:03d}  x={p.x:7.2f} y={p.y:7.2f} z={p.z:7.2f}")
-    sub.remove_object_to_edit(c)
+    session.__exit__(None, None, None)
 
 
 def run(stage):
@@ -222,9 +227,9 @@ def run(stage):
     st = spec["stages"][stage]
     target = f"{ASSET_DIR}/alice_{stage}"
     sub = get_subsystem()
-    refuse_if_any_character_open(sub)
 
     if unreal.EditorAssetLibrary.does_asset_exist(target):
+        refuse_if_open(sub, load_character(target))
         log(f"{target} exists — deleting and re-creating from base")
         unreal.EditorAssetLibrary.delete_asset(target)
     if not unreal.EditorAssetLibrary.duplicate_asset(BASE_ASSET, target):
@@ -232,9 +237,7 @@ def run(stage):
     log(f"duplicated {BASE_ASSET} -> {target}")
 
     c = load_character(target)
-    if not sub.try_add_object_to_edit(c):
-        raise RuntimeError("could not add character for editing (is it open in an editor tab? close it)")
-    try:
+    with EditSession(sub, c):
         log(f"stage '{stage}': age {st.get('age')}")
         apply_body(sub, c, st.get("proportions_cm"), spec["stages"]["young"].get("proportions_cm"))
         apply_skin(sub, c, st.get("face", {}))
@@ -242,8 +245,6 @@ def run(stage):
         cons = st.get("constraints") or {}
         if cons:
             log(f"  constraints {cons} recorded in yaml; the stoop is applied at animation time, not on the character asset")
-    finally:
-        sub.remove_object_to_edit(c)
     unreal.EditorAssetLibrary.save_asset(target)
     log(f"saved {target}. Open it in the Content Drawer to judge; edit the yaml and re-run to iterate.")
 
