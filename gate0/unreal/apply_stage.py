@@ -86,10 +86,13 @@ def close_all_asset_editors():
     # A MetaHuman character editor left open (esp. with the Skin tool active) asserts when its
     # target changes under it. Close every asset editor before touching characters.
     aes = unreal.get_editor_subsystem(unreal.AssetEditorSubsystem)
-    opened = aes.get_all_edited_assets()
-    if opened:
-        log(f"closing {len(opened)} open asset editor(s): {[a.get_name() for a in opened]}")
-        aes.close_all_asset_editors()
+    n = 0
+    for path in unreal.EditorAssetLibrary.list_assets(ASSET_DIR, recursive=True, include_folder=False):
+        obj = unreal.load_asset(path.split(".")[0]) if unreal.EditorAssetLibrary.does_asset_exist(path.split(".")[0]) else None
+        if obj and isinstance(obj, unreal.MetaHumanCharacter):
+            aes.close_all_editors_for_asset(obj)
+            n += 1
+    log(f"closed editors for {n} character asset(s)")
 
 
 def load_character(path):
