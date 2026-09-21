@@ -5,7 +5,7 @@
 # Conventions: engine-native (Unreal). Z-up, left-handed, centimeters.
 # Body proportions are REAL MEASUREMENTS in cm, matching the fields of the UE 5.8 MetaHuman
 # Character editor's Body > Model > Parametric tool, so they can be typed in directly.
-# Method: the base preset's (Celeste's) defaults ARE the young stage, except Height. Middle and
+# Method: the base preset's (Celeste's) defaults ARE the young stage, unchanged. Middle and
 # old are deltas from young. Fields not listed stay at the preset default at every stage.
 # AcrossShoulder in MetaHuman is NOT full back width (default is much smaller than ~38 cm) — it is
 # left at the preset default for young and scaled by percentage for the other stages.
@@ -38,8 +38,8 @@ stages:
   young:
     age: 22
     proportions_cm:                        # MetaHuman Body > Model > Parametric field names
-      Height: 168
-      AcrossShoulder: preset_default       # record Celeste's value here once read: ___
+      Height: preset_default               # record Celeste's value here once read: ___
+      AcrossShoulder: preset_default       # ___
       Hip: preset_default                  # ___
       Waist: preset_default                # ___
       Chest: preset_default                # ___
@@ -56,7 +56,7 @@ stages:
   middle:
     age: 45
     proportions_cm:                        # deltas from young
-      Height: 168
+      Height: young
       AcrossShoulder: "young * 1.015"
       Hip: "young + 4"
       Waist: "young + 6"
@@ -74,7 +74,7 @@ stages:
   old:
     age: 72
     proportions_cm:                        # deltas from young
-      Height: 163                          # height loss with age
+      Height: "young - 5"                  # height loss with age
       AcrossShoulder: "young * 0.96"
       Hip: "young + 4"
       Waist: "young + 10"
