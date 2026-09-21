@@ -49,12 +49,12 @@ AGING_REGIONS = {
     # name: (x_abs_min, x_abs_max, z_min, z_max, delta_cm (x, y, z))
     # deltas are cm at strength 1.0 (old). Deliberately bold so the change is unmistakable;
     # dial back once the loop is confirmed visually.
-    "cheeks":        (0.35, 0.80, 0.35, 0.60, (0.0, 0.0, -1.20)),
-    "jowls":         (0.30, 0.70, 0.10, 0.30, (0.4, 0.0, -1.00)),   # down and slightly outward
-    "mouth_corners": (0.15, 0.40, 0.26, 0.40, (0.0, 0.0, -0.50)),
-    "upper_lip":     (0.00, 0.18, 0.33, 0.38, (0.0, 0.0, -0.15)),
+    "cheeks":        (0.35, 0.80, 0.35, 0.60, (0.0, 0.0, -0.80)),
+    "jowls":         (0.30, 0.70, 0.10, 0.30, (0.3, 0.0, -0.70)),   # down and slightly outward
+    "mouth_corners": (0.15, 0.40, 0.26, 0.40, (0.0, 0.0, -0.35)),
+    "upper_lip":     (0.00, 0.18, 0.33, 0.38, (0.0, 0.0, -0.10)),
 }
-AGING_STRENGTH = {"young": 0.0, "middle": 0.45, "old": 1.0, "extreme": 2.5}
+AGING_STRENGTH = {"young": 0.0, "middle": 0.45, "old": 1.0}
 
 
 def load_yaml():

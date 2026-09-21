@@ -7,6 +7,10 @@
 # Character editor's Body > Model > Parametric tool, so they can be typed in directly.
 # Method: the base preset's (Celeste's) defaults ARE the young stage, unchanged. Middle and
 # old are deltas from young. Fields not listed stay at the preset default at every stage.
+# Skin aging: FaceTextureIndex picks one of 153 synthesized face textures, each tagged in
+# Content/Optional/TextureSynthesis/.../texture_attributes.json with Face Wrinkles (Low/Medium/High),
+# Face Stubble, Face Marks. Female-suitable (no stubble) High-wrinkle indices:
+#   20 47 48 50 52 55 69 70 90 109 120 121 127 151   (Medium: 10 14 22 24 40 42 62 68 73 76 100 138 141)
 # AcrossShoulder in MetaHuman is NOT full back width (default is much smaller than ~38 cm) — it is
 # left at the preset default for young and scaled by percentage for the other stages.
 
@@ -45,7 +49,7 @@ stages:
       Neck: preset_default                 # 36.4
       Fat: preset_default                  # 0.06  (range -2.8 .. 2.8)
     face:                                  # young = Celeste default skin, no edits
-      skin_face_texture_index: preset_default   # Materials > Skin > Face (HF detail map), int
+      skin_face_texture_index: preset_default   # Celeste = #99: wrinkles Low, marks Low
       skin_roughness: preset_default       # Materials > Skin > Roughness (0.85–1.15)
       sculpt_aging: none
       hair: preset_default
@@ -64,7 +68,7 @@ stages:
       Neck: "young + 1"
       Fat: "young + 0.3"
     face:
-      skin_face_texture_index: preset_default   # set to the index with more detail once seen in the editor
+      skin_face_texture_index: 100          # wrinkles Medium (texture_attributes.json)
       skin_roughness: "young + 0.03"
       sculpt_aging: "light nasolabial folds, slight crow's feet; keep the 3 asymmetries"
       hair: "grey at temples"
@@ -73,18 +77,18 @@ stages:
   old:
     age: 72
     proportions_cm:                        # deltas from young
-      Height: "young - 7"                  # height loss with age
+      Height: "young - 5"                  # height loss with age
       AcrossShoulder: "young * 0.96"
       Hip: "young + 4"
-      Waist: "young + 14"
+      Waist: "young + 8"
       Chest: "young + 4"
       HandCircumference: "young - 0.5"
       NeckLength: "young - 0.5"
       Neck: "young + 1"
-      Fat: "young + 1.5"                   # bold first pass; dial back after visual check
+      Fat: "young + 0.6"
       # arm lengths stay at default; reach geometry changes via the stoop constraint below
     face:
-      skin_face_texture_index: preset_default   # set to the highest-detail index once seen
+      skin_face_texture_index: 120          # wrinkles High + age marks
       skin_roughness: "young + 0.08"
       sculpt_aging: "cheeks pulled down, jowls, deep nasolabial folds, thinner lips; keep the 3 asymmetries"
       hair: "grey-white, thinner"
@@ -92,23 +96,6 @@ stages:
       spine_stoop_deg: 8                   # forward flexion applied on top of every clip
       # This is the only "character-specific constraint" in Gate 0.
       # It must NOT break contact at the fridge handle or the can — that's a scored check.
-
-  # TEMPORARY diagnostic stage — not a real life stage. Changes so large they cannot be missed.
-  # If alice_extreme looks identical to alice in the editor, the preview is not rebuilding from
-  # the saved state. Delete this block once that question is settled.
-  extreme:
-    age: 0
-    proportions_cm:
-      Height: 140
-      Fat: 2.8
-      Waist: "young + 40"
-      Hip: "young + 30"
-      AcrossShoulder: "young * 0.7"
-    face:
-      skin_roughness: 1.15
-      sculpt_aging: "cheeks/jowls -3 cm (AGING_STRENGTH extreme)"
-      hair: preset_default
-    constraints: {}
 
 # Every stage plays the SAME clips. Motion is deliberately not aged (design doc §13.1).
 motion:
