@@ -214,6 +214,16 @@ def dump(asset=None):
         log(f"  {n:22s} {float(k.target_measurement):8.2f}  [{float(k.min_measurement):.1f} .. {float(k.max_measurement):.1f}]  active={bool(k.is_active)}")
     skin = c.get_editor_property("skin_settings").get_editor_property("skin")
     log(f"skin: roughness={float(skin.get_editor_property('roughness')):.3f} face_texture_index={int(skin.get_editor_property('face_texture_index'))} body_texture_index={int(skin.get_editor_property('body_texture_index'))}")
+    # Does the character actually have synthesized face textures, and at what resolution?
+    fe = c.get_editor_property("face_evaluation_settings")
+    log(f"face eval: global_delta={float(fe.get_editor_property('global_delta')):.2f} high_frequency_delta={float(fe.get_editor_property('high_frequency_delta')):.2f} head_scale={float(fe.get_editor_property('head_scale')):.2f}")
+    log(f"has_high_resolution_textures={c.has_high_resolution_textures()} preview_material={c.get_editor_property('preview_material_type')}")
+    synth = c.get_editor_property("synthesized_face_textures")
+    if synth:
+        for k, tex in synth.items():
+            log(f"  synthesized {k}: {tex.get_name() if tex else None} {tex.blueprint_get_size_x() if tex else ''}x{tex.blueprint_get_size_y() if tex else ''}")
+    else:
+        log("  NO synthesized face textures on this character — the wrinkle map has nothing to apply to.")
     lms = sub.get_face_landmarks(c)
     x0, x1, z0, z1 = face_bbox(lms)
     log(f"face landmarks: {len(lms)}  x[{x0:.2f},{x1:.2f}] z[{z0:.2f},{z1:.2f}]")
