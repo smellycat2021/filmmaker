@@ -42,7 +42,7 @@ def sub():
 def check():
     s, c = sub(), character()
     log(f"character: {c.get_name()}")
-    log(f"  has_high_resolution_textures: {c.has_high_resolution_textures()}")
+    log(f"  has_high_resolution_textures: {c.has_high_resolution_textures}")
     buildable = s.can_build_meta_human(c, log_error=True)
     log(f"  can_build_meta_human: {buildable}")
     if not buildable:

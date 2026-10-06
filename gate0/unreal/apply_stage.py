@@ -217,7 +217,7 @@ def dump(asset=None):
     # Does the character actually have synthesized face textures, and at what resolution?
     fe = c.get_editor_property("face_evaluation_settings")
     log(f"face eval: global_delta={float(fe.get_editor_property('global_delta')):.2f} high_frequency_delta={float(fe.get_editor_property('high_frequency_delta')):.2f} head_scale={float(fe.get_editor_property('head_scale')):.2f}")
-    log(f"has_high_resolution_textures={c.has_high_resolution_textures()} preview_material={c.get_editor_property('preview_material_type')}")
+    log(f"has_high_resolution_textures={c.has_high_resolution_textures} preview_material={c.get_editor_property('preview_material_type')}")
     synth = c.get_editor_property("synthesized_face_textures")
     if synth:
         for k, tex in synth.items():
