@@ -89,7 +89,7 @@ The initial version will not attempt:
 
 * Arbitrary-length films or unrestricted environments.
 * Arbitrary object interactions or generalized grasp synthesis.
-* Automatic character or environment generation, arbitrary imported assets, or cross-topology motion retargeting (between different rig families). Same-topology proportion adaptation within the canonical rig (§6.2) is in scope and engine-native. **The MVP asset set and rig versions are frozen** (§5.4).
+* Automatic character or environment generation from references (photo-to-character is post-MVP but on the critical path — §5.5), arbitrary imported assets, or cross-topology motion retargeting (between different rig families). Same-topology proportion adaptation within the canonical rig (§6.2) is in scope and engine-native. **The MVP asset set and rig versions are frozen** (§5.4).
 * Fully automatic expressive acting.
 * Dialogue, audio, lip-sync, or voice. The screenplay format may contain dialogue; the MVP ignores it.
 * Guaranteed photorealism.
@@ -209,6 +209,31 @@ For the MVP the asset set is **frozen**:
 * One soda can.
 
 Authored motion clips (§7.2) are built against exactly these assets. No automatic character generation, no arbitrary imported refrigerator models, no cross-rig retargeting. This removes asset generation, rig compatibility, and motion transfer as variables from both gates; they are re-introduced only after the architecture is validated.
+
+### 5.5 Character variety and the photo-to-character path
+
+The MVP freezes one character (§5.4), so variety is not an MVP problem. It is a product problem,
+and the measurement below says it has to be solved by generation from references rather than by
+picking from a library.
+
+Measured on the UE 5.8 MetaHuman content that ships with the engine:
+
+| | Shipped |
+| --- | --- |
+| Character presets | 29 (~4 East/Central Asian, ~2 South Asian) |
+| Face texture library | one library, 153 anchor characters |
+| Skin tone axis | continuous 0.0–1.0, but 52% of anchors fall in the lightest 30% |
+
+The presets are not the variant space — the face is a continuous parametric model, reachable
+through face-model coefficients, multi-preset blending, landmark sculpting, conforming to an
+arbitrary target mesh, and Mesh-to-MetaHuman from photographs or footage. All of these are
+scriptable, so they fit the IR-driven pipeline.
+
+The consequence for the roadmap: **photo-to-character is a required capability, not an optional
+one.** A pipeline that can only cast from a shipped preset list cannot serve most scripts. This
+should be spiked with a reference face that the shipped library covers poorly, and the spike
+should answer whether the generated character is usable without manual sculpting, since manual
+sculpting per character is exactly the asset cost this risk is about.
 
 ## 6. World model
 
@@ -691,6 +716,8 @@ See §11.1. The manifest is the reproducibility record.
 | Cross-shot identity drifts under generation | Multi-shot continuity breaks | Two-camera fixture in Gate B; cold vs. chained modes; identity checks. |
 | Hand-object interactions fail in 3D | Common actions look implausible | Frozen assets, authored clips, limited IK, contact validation at critical frames. |
 | Asset / rig incompatibility | Clips authored for one rig don't transfer | Asset freeze for MVP; no retargeting requirement. |
+| **Shipped character library does not cover the needed demographics** | Cannot cast most scenes; the product only serves the faces the vendor happened to ship | Drive faces from reference images (photo/scan → character) rather than preset selection. Measured on UE 5.8 MetaHuman: 29 presets, ~6 East/South Asian; 153 face-texture anchors on a continuous tone axis, but 52% of them in the lightest 30% of that axis. See §5.5. |
+| **Cloud-service dependency for character creation** | Characters cannot be produced offline or in CI; an auth or service outage blocks the pipeline | Cache rigged/built characters as committed assets; treat the services as build-time, not run-time. Known services: face auto-rigging, texture sources, Mesh-to-MetaHuman. Each requires an authenticated vendor account. |
 | Camera paths invalid | Camera intersects geometry or loses the subject | Engine-native rigs, authored paths, collision detection with human fix. |
 | Script interpretation ambiguous | Incorrect or inconsistent production decisions | Typed IR, unresolved-decision tracking, human review; compiler built only after Gate A. |
 | Regeneration cost excessive | Slow iteration and poor economics | Measure first (Gate B cost recording); build selective invalidation on evidence. |
@@ -721,6 +748,7 @@ To resolve through prototypes rather than upfront specification.
 
 | Question | Why it matters |
 | --- | --- |
+| Does photo-to-character close the demographic coverage gap, or only move it? | Determines whether casting is a solved pipeline step or a per-character manual cost (§5.5). |
 | How much 3D detail does the generative renderer need? | Determines asset cost and whether structural passes give sufficient guidance. Partly answered by Gate B. |
 | What conditioning interface does the video model actually support? | Determines whether camera, geometry, and motion constraints can be enforced. Answered by Gate B. |
 | Cold vs. chained cross-shot generation | Determines the multi-shot pipeline shape. Answered by Gate B. |
